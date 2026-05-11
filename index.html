@@ -67,7 +67,7 @@
         .action-buttons { display: flex; justify-content: space-between; margin-top: auto; border-top: 2px solid var(--secondary); padding-top: 20px; }
 
         /* Anti-Cheating Overlay */
-        #antiCheatOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: red; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; text-align: center; }
+        #antiCheatOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(220, 53, 69, 0.95); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; text-align: center; }
         #antiCheatOverlay h1 { color: white; font-size: 50px; margin-bottom: 20px; text-transform: uppercase;}
         #antiCheatOverlay p { font-size: 24px; margin-bottom: 30px; }
         #cheatCountdownText { font-size: 100px; font-weight: bold; margin-bottom: 40px; }
@@ -90,11 +90,11 @@
 <body>
 
     <div id="antiCheatOverlay" class="hidden">
-        <h1>⚠️ PERINGATAN! JANGAN PINDAH TAB!</h1>
+        <h1>⚠️ PERINGATAN KECURANGAN!</h1>
         <p>Aktivitas mencurigakan terdeteksi. Anda telah keluar dari layar ujian.</p>
         <p>Ujian akan otomatis disubmit dalam:</p>
         <div id="cheatCountdownText">10</div>
-        <button class="btn btn-primary" style="font-size: 24px; padding: 20px 40px;" onclick="returnToExam()">KEMBALI KE UJIAN SEKARANG</button>
+        <button class="btn btn-warning" style="font-size: 24px; padding: 20px 40px; color: black;" onclick="returnToExam()">MATIKAN ALARM & KEMBALI KE UJIAN</button>
         <p style="margin-top: 20px; font-size: 18px;">Peringatan ke: <span id="violationCount">0</span>/3</p>
     </div>
 
@@ -186,7 +186,7 @@
             { id: 8, content: "Jika a = 2 dan b = -3, nilai dari bentuk aljabar 2a - 3b adalah...", image: null, options: ["-5", "5", "13", "-13"], answer: 2, difficulty: "REGULER" },
             { id: 9, content: "Bentuk aljabar yang menyatakan '5 kurangnya dari dua kali suatu bilangan x' adalah...", image: null, options: ["5 - 2x", "2x - 5", "2(x - 5)", "x - 10"], answer: 1, difficulty: "REGULER" },
             { id: 10, content: "KPK dari bentuk aljabar 4a²b dan 6ab² adalah...", image: null, options: ["12a²b²", "2ab", "24a³b³", "10a²b²"], answer: 0, difficulty: "REGULER" },
-            { id: 11, content: "Banyaknya suku pada bentuk aljabar 4a³ − 2a²b + 6b − 1 adalah...", image: null, options: ["2","3","4","5"], answer: 0, difficulty: "REGULER" },
+            { id: 11, content: "Banyaknya suku pada bentuk aljabar 4a³ − 2a²b + 6b − 1 adalah...", image: null, options: ["2","3","4","5"], answer: 2, difficulty: "REGULER" },
             { id: 12, content: "Bentuk sederhana dari pecahan aljabar (4x + 8) / 4 adalah...", image: null, options: ["x + 8", "x + 2", "4x + 2", "x + 4"], answer: 1, difficulty: "REGULER" },
             { id: 13, content: "Andi memiliki permen sebanyak x. Budi memiliki permen 3 lebih banyak dari permen Andi. Jumlah permen mereka berdua dalam bentuk aljabar adalah...", image: null, options: ["2x + 3", "x + 3", "3x", "2x - 3"], answer: 0, difficulty: "REGULER" },
             { id: 14, content: "Bentuk pembagian (x² + 5x + 6) : (x + 2) menghasilkan...", image: null, options: ["x + 1", "x + 2", "x + 3", "x + 4"], answer: 2, difficulty: "REGULER" },
@@ -202,7 +202,7 @@
         let currentQuestionIndex = 0;
         let studentAnswers = new Array(20).fill(null);
         let doubtfulStatus = new Array(20).fill(false);
-        let examTimeRemaining = 60 * 60; // 60 minutes
+        let examTimeRemaining = 60 * 60; 
         let timerInterval;
         let examActive = false;
         let studentData = { name: "", class: "", presensi: "" };
@@ -213,7 +213,11 @@
         let isCheatingOverlayActive = false;
         let saveStateInterval;
 
-        // --- SECURITY ---
+        // --- AUDIO ALARM VARIABLES ---
+        let audioContext;
+        let audioAlarmInterval;
+
+        // --- SECURITY & ANTI-CHEAT ---
         document.addEventListener('contextmenu', event => event.preventDefault()); 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
@@ -221,7 +225,6 @@
             }
         });
 
-        // --- ANTI-CHEATING LOGIC ---
         document.addEventListener("visibilitychange", () => {
             if (document.hidden && examActive) triggerAntiCheating();
         });
@@ -238,12 +241,16 @@
             document.getElementById('cheatCountdownText').innerText = cheatTimeLeft;
             document.getElementById('violationCount').innerText = violations + 1;
 
+            // Nyalakan Suara Alarm
+            playAlarmSound();
+
             clearInterval(cheatTimerInterval);
             cheatTimerInterval = setInterval(() => {
                 cheatTimeLeft--;
                 document.getElementById('cheatCountdownText').innerText = cheatTimeLeft;
                 if (cheatTimeLeft <= 0) {
                     clearInterval(cheatTimerInterval);
+                    stopAlarmSound();
                     alert("Waktu peringatan habis! Ujian otomatis disubmit.");
                     processSubmit();
                 }
@@ -252,6 +259,7 @@
 
         function returnToExam() {
             clearInterval(cheatTimerInterval);
+            stopAlarmSound(); // Matikan alarm saat kembali
             document.getElementById('antiCheatOverlay').classList.add('hidden');
             isCheatingOverlayActive = false;
             violations++;
@@ -259,6 +267,45 @@
                 alert("PELANGGARAN MAKSIMAL! Anda telah melakukan kecurangan 3 kali. Ujian diakhiri otomatis.");
                 processSubmit();
             }
+        }
+
+        // --- AUDIO GENERATOR FUNCTION ---
+        function playAlarmSound() {
+            // Inisialisasi Audio Context (hanya dibuat jika belum ada)
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            function beep() {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                // Jenis gelombang 'sawtooth' memberikan suara kasar mirip alarm peringatan
+                oscillator.type = 'sawtooth'; 
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Frekuensi tinggi
+                
+                // Atur Volume
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.3); // Beep selama 0.3 detik
+            }
+
+            // Bunyikan langsung, lalu ulang setiap 0.6 detik
+            beep();
+            clearInterval(audioAlarmInterval);
+            audioAlarmInterval = setInterval(beep, 600);
+        }
+
+        function stopAlarmSound() {
+            clearInterval(audioAlarmInterval);
         }
 
         // --- INITIALIZATION ---
@@ -271,6 +318,11 @@
             document.getElementById('displayName').innerText = studentData.name;
             document.getElementById('displayClass').innerText = studentData.class;
             document.getElementById('displayPresensi').innerText = studentData.presensi;
+            
+            // Mengakali policy browser: inisialisasi awal AudioContext saat user klik submit (Mulai Ujian)
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
             
             let savedState = localStorage.getItem('examState_aljabar');
             if (savedState) {
@@ -438,6 +490,7 @@
 
         function processSubmit() {
             examActive = false;
+            stopAlarmSound(); // Pastikan alarm mati saat submit otomatis
             clearInterval(timerInterval);
             clearInterval(cheatTimerInterval);
             clearInterval(saveStateInterval);
@@ -475,37 +528,31 @@
             }
         }
 
-        // --- FITUR DOWNLOAD KE GAMBAR (.PNG) ---
         function downloadResultImage() {
             const captureArea = document.getElementById('captureArea');
             const btn = document.getElementById('btnDownloadImage');
             
-            // Ubah state tombol agar pengguna tahu proses berjalan
             let originalText = btn.innerText;
             btn.innerText = "⏳ Sedang memproses gambar...";
             btn.disabled = true;
 
-            // Render div captureArea ke dalam kanvas gambar
             html2canvas(captureArea, { 
-                scale: 2, // scale diperbesar agar resolusi tidak pecah (HD)
-                backgroundColor: "#ffffff" // pastikan background tidak transparan/hitam
+                scale: 2, 
+                backgroundColor: "#ffffff"
             }).then(canvas => {
                 let link = document.createElement('a');
-                
-                // Format nama file: Hasil_Aljabar_Kelas_NamaSiswa.png
                 let namaSiswa = document.getElementById('resName').innerText.replace(/\s+/g, '_');
                 let kelasSiswa = document.getElementById('resClass').innerText.replace(/\s+/g, '');
                 
                 link.download = `Hasil_Aljabar_${kelasSiswa}_${namaSiswa}.png`;
-                link.href = canvas.toDataURL("image/png"); // Konversi canvas ke base64 png
+                link.href = canvas.toDataURL("image/png"); 
                 link.click();
                 
-                // Kembalikan tombol ke keadaan semula
                 btn.innerText = originalText;
                 btn.disabled = false;
             }).catch(err => {
                 console.error("Error capturing image: ", err);
-                alert("Terjadi kesalahan saat memproses gambar. Silakan ambil tangkapan layar (screenshot) secara manual.");
+                alert("Terjadi kesalahan saat memproses gambar.");
                 btn.innerText = originalText;
                 btn.disabled = false;
             });
