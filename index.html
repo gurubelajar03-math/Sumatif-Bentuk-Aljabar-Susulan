@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sumatif - Bentuk Aljabar</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --primary-light: #007bff;
+            --secondary: #f8f9fa;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --dark: #343a40;
+            --text: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f7f6; color: var(--text); }
+
+        /* Container & Layout */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .hidden { display: none !important; }
+
+        /* Screens */
+        #loginScreen, #resultScreen, #teacherScreen { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: 50px auto; text-align: center; }
+        #teacherScreen { max-width: 800px; text-align: left; }
+        
+        h1, h2 { color: var(--primary); margin-bottom: 20px; }
+        input[type="text"], input[type="number"], input[type="password"] { width: 100%; padding: 12px; margin: 10px 0 20px; border: 1px solid #ccc; border-radius: 5px; }
+        
+        .btn { padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; color: white; }
+        .btn-primary { background: var(--primary); }
+        .btn-primary:hover { background: var(--primary-light); }
+        .btn-warning { background: var(--warning); color: var(--dark); }
+        .btn-danger { background: var(--danger); }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); margin-top: 10px; width: 100%;}
+        
+        /* Exam Layout */
+        #examScreen { display: flex; gap: 20px; height: 90vh; }
+        
+        /* Sidebar */
+        .sidebar { width: 250px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .timer-box { font-size: 24px; font-weight: bold; color: var(--danger); text-align: center; margin-bottom: 20px; padding: 10px; border: 2px solid var(--danger); border-radius: 5px; }
+        .nav-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; overflow-y: auto; flex-grow: 1; align-content: start;}
+        .nav-btn { padding: 10px; border: 1px solid #ccc; background: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .nav-btn.answered { background: var(--primary); color: white; border-color: var(--primary); }
+        .nav-btn.doubtful { background: var(--warning); color: var(--dark); border-color: var(--warning); }
+        .nav-btn.active { outline: 3px solid var(--dark); }
+
+        /* Main Content */
+        .main-content { flex: 1; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto;}
+        .question-header { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 10px; }
+        .badge { padding: 5px 10px; border-radius: 3px; font-size: 12px; color: white; }
+        .bg-regular { background: var(--success); }
+        .bg-hots { background: var(--danger); }
+        
+        .question-text { font-size: 18px; margin-bottom: 20px; line-height: 1.6; }
+        .options-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+        .option-label { display: flex; align-items: center; padding: 15px; border: 1px solid #ccc; border-radius: 5px; cursor: pointer; transition: 0.2s; }
+        .option-label:hover { background: var(--secondary); }
+        .option-label input { margin-right: 15px; transform: scale(1.2); }
+        .option-label.selected { border-color: var(--primary); background: #e6f0ff; }
+
+        .action-buttons { display: flex; justify-content: space-between; margin-top: auto; border-top: 2px solid var(--secondary); padding-top: 20px; }
+
+        /* Anti-Cheating Overlay */
+        #antiCheatOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: red; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; text-align: center; }
+        #antiCheatOverlay h1 { color: white; font-size: 50px; margin-bottom: 20px; text-transform: uppercase;}
+        #antiCheatOverlay p { font-size: 24px; margin-bottom: 30px; }
+        #cheatCountdownText { font-size: 100px; font-weight: bold; margin-bottom: 40px; }
+
+        /* Hasil Card */
+        .result-card { border: 2px solid var(--secondary); padding: 20px; border-radius: 10px; text-align: left; margin-bottom: 20px; background: #fff;}
+        .result-item { font-size: 16px; margin-bottom: 10px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;}
+        .remedial-box { padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 20px; font-size: 18px; }
+        
+        /* Area khusus untuk di-screenshot */
+        #captureArea { background: white; padding: 20px; border-radius: 10px; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            #examScreen { flex-direction: column; height: auto; }
+            .sidebar { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="antiCheatOverlay" class="hidden">
+        <h1>⚠️ PERINGATAN! JANGAN PINDAH TAB!</h1>
+        <p>Aktivitas mencurigakan terdeteksi. Anda telah keluar dari layar ujian.</p>
+        <p>Ujian akan otomatis disubmit dalam:</p>
+        <div id="cheatCountdownText">10</div>
+        <button class="btn btn-primary" style="font-size: 24px; padding: 20px 40px;" onclick="returnToExam()">KEMBALI KE UJIAN SEKARANG</button>
+        <p style="margin-top: 20px; font-size: 18px;">Peringatan ke: <span id="violationCount">0</span>/3</p>
+    </div>
+
+    <div class="container">
+        <div id="loginScreen">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Pendidikan_Nasional_logo.png/120px-Pendidikan_Nasional_logo.png" alt="Logo" style="width: 80px; margin-bottom: 20px;">
+            <h2>Sumatif - Bentuk Aljabar</h2>
+            <p>Matematika SMP Kelas 7 | Waktu: 60 Menit</p>
+            <form id="loginForm" style="margin-top: 20px;">
+                <input type="text" id="studentName" placeholder="Nama Lengkap" required autocomplete="off">
+                <input type="text" id="studentClass" placeholder="Kelas (Contoh: 7A)" required autocomplete="off">
+                <input type="number" id="studentPresensi" placeholder="Nomor Presensi" required autocomplete="off" min="1" max="50">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Mulai Ujian</button>
+            </form>
+            <button class="btn btn-outline" onclick="showTeacherLogin()">Akses Guru</button>
+        </div>
+
+        <div id="examScreen" class="hidden">
+            <div class="sidebar">
+                <div class="timer-box" id="timerDisplay">60:00</div>
+                <div style="margin-bottom: 15px; font-size: 14px;">
+                    <strong>Identitas:</strong><br>
+                    <span id="displayName">Nama</span><br>
+                    Kelas <span id="displayClass">Kelas</span> | No. <span id="displayPresensi">0</span>
+                </div>
+                <h4>Navigasi Soal</h4>
+                <div class="nav-grid" id="navGrid"></div>
+                <button class="btn btn-danger" style="margin-top: 20px;" onclick="confirmSubmit()">Selesai & Submit</button>
+            </div>
+
+            <div class="main-content">
+                <div class="question-header">
+                    <span id="questionNumber">Soal 1</span>
+                    <span id="questionDifficulty" class="badge bg-regular">REGULER</span>
+                </div>
+                <div id="questionText" class="question-text">Teks soal akan muncul di sini.</div>
+                <div id="questionImageContainer" class="hidden" style="margin-bottom: 20px;">
+                    <img id="questionImage" src="" alt="Gambar Soal" style="max-width: 100%; max-height: 300px;">
+                </div>
+                <div class="options-container" id="optionsContainer"></div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="btnPrev" onclick="prevQuestion()">&#8592; Sebelumnya</button>
+                    <button class="btn btn-warning" id="btnDoubt" onclick="toggleDoubt()">Ragu-ragu</button>
+                    <button class="btn btn-primary" id="btnNext" onclick="nextQuestion()">Selanjutnya &#8594;</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultScreen" class="hidden">
+            <div id="captureArea">
+                <h2>Ujian Selesai!</h2>
+                <div class="result-card">
+                    <div class="result-item"><strong>Nama:</strong> <span id="resName"></span></div>
+                    <div class="result-item"><strong>Kelas:</strong> <span id="resClass"></span></div>
+                    <div class="result-item"><strong>No. Presensi:</strong> <span id="resPresensi"></span></div>
+                    <div class="result-item" style="color: var(--danger);"><strong>Catatan Pelanggaran:</strong> <span id="resViolations">0</span> kali (Pindah Tab/Layar)</div>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <span style="font-size: 16px; color: #666;">Nilai Akhir:</span>
+                        <div id="resScore" style="font-size: 48px; color: var(--primary); font-weight: bold;">100</div>
+                        <div style="font-size: 14px; color: #666;">(Benar <span id="resCorrect"></span> dari 20 Soal)</div>
+                    </div>
+                    <div id="resRemedial" class="remedial-box">
+                        </div>
+                </div>
+            </div>
+            
+            <button id="btnDownloadImage" class="btn btn-primary" onclick="downloadResultImage()" style="width: 100%; margin-bottom: 10px; font-size: 18px; margin-top: 15px;">🖼️ Unduh Hasil Ujian (.png)</button>
+            <p style="color: #666; font-size: 14px;">Klik tombol di atas untuk mengunduh bukti nilai ujian ke Galeri / File Anda.</p>
+        </div>
+
+        <div id="teacherScreen" class="hidden">
+            <h2>Panel Guru</h2>
+            <button class="btn btn-danger" onclick="logoutTeacher()" style="float: right; margin-top: -55px;">Keluar</button>
+            <div id="teacherContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA SOAL ---
+        const questionsData = [
+            { id: 1, content: "Koefisien dari x pada bentuk aljabar 5x² - 3x + 7 adalah...", image: null, options: ["5", "-3", "3", "7"], answer: 1, difficulty: "REGULER" },
+            { id: 2, content: "Suku-suku sejenis dari bentuk aljabar 3a² + 5a - 2a² - 7 adalah...", image: null, options: ["3a² dan 5a", "5a dan -7", "3a² dan -2a²", "5a dan -2a²"], answer: 2, difficulty: "REGULER" },
+            { id: 3, content: "Bentuk sederhana dari 4x + 5y - 2x + 3y adalah...", image: null, options: ["2x + 8y", "6x + 8y", "2x + 2y", "6x + 2y"], answer: 0, difficulty: "REGULER" },
+            { id: 4, content: "Hasil penjumlahan dari (3p - 4q) dan (2p + 5q) adalah...", image: null, options: ["5p - 9q", "5p + q", "p + 9q", "p - q"], answer: 1, difficulty: "REGULER" },
+            { id: 5, content: "Hasil pengurangan (7x - 3y) oleh (2x + 4y) adalah...", image: null, options: ["5x + y", "5x - 7y", "9x + y", "9x - 7y"], answer: 1, difficulty: "REGULER" },
+            { id: 6, content: "Hasil perkalian dari 3(2x - 5) adalah...", image: null, options: ["6x - 15", "6x - 5", "5x - 15", "5x - 8"], answer: 0, difficulty: "REGULER" },
+            { id: 7, content: "Hasil dari (x + 3)(x - 2) adalah...", image: null, options: ["x² - 6", "x² + x - 6", "x² - x - 6", "x² + 5x - 6"], answer: 1, difficulty: "REGULER" },
+            { id: 8, content: "Jika a = 2 dan b = -3, nilai dari bentuk aljabar 2a - 3b adalah...", image: null, options: ["-5", "5", "13", "-13"], answer: 2, difficulty: "REGULER" },
+            { id: 9, content: "Bentuk aljabar yang menyatakan '5 kurangnya dari dua kali suatu bilangan x' adalah...", image: null, options: ["5 - 2x", "2x - 5", "2(x - 5)", "x - 10"], answer: 1, difficulty: "REGULER" },
+            { id: 10, content: "KPK dari bentuk aljabar 4a²b dan 6ab² adalah...", image: null, options: ["12a²b²", "2ab", "24a³b³", "10a²b²"], answer: 0, difficulty: "REGULER" },
+            { id: 11, content: "Banyaknya suku pada bentuk aljabar 4a³ − 2a²b + 6b − 1 adalah...", image: null, options: ["2","3","4","5"], answer: 0, difficulty: "REGULER" },
+            { id: 12, content: "Bentuk sederhana dari pecahan aljabar (4x + 8) / 4 adalah...", image: null, options: ["x + 8", "x + 2", "4x + 2", "x + 4"], answer: 1, difficulty: "REGULER" },
+            { id: 13, content: "Andi memiliki permen sebanyak x. Budi memiliki permen 3 lebih banyak dari permen Andi. Jumlah permen mereka berdua dalam bentuk aljabar adalah...", image: null, options: ["2x + 3", "x + 3", "3x", "2x - 3"], answer: 0, difficulty: "REGULER" },
+            { id: 14, content: "Bentuk pembagian (x² + 5x + 6) : (x + 2) menghasilkan...", image: null, options: ["x + 1", "x + 2", "x + 3", "x + 4"], answer: 2, difficulty: "REGULER" },
+            { id: 15, content: "Konstanta pada bentuk aljabar 2x² - 5x - 8 adalah...", image: null, options: ["2", "-5", "8", "-8"], answer: 3, difficulty: "REGULER" },
+            { id: 16, content: "Umur ayah p tahun, sedangkan umur ibu 3 tahun lebih muda dari ayah. Jika jumlah umur mereka 73 tahun, model matematikanya adalah...", image: null, options: ["p + 3 = 73", "2p + 3 = 73", "2p - 3 = 73", "p - 3 = 73"], answer: 2, difficulty: "REGULER" },
+            { id: 17, content: "Sebuah kebun berbentuk persegi panjang dengan panjang (3x - 5) meter dan lebar (x + 2) meter. Keliling kebun tersebut adalah... meter.", image: null, options: ["8x - 6", "4x - 3", "8x + 6", "4x + 3"], answer: 0, difficulty: "HOTS" },
+            { id: 18, content: "Sebuah perusahaan taksi menetapkan tarif awal Rp8.000 dan tarif per kilometer Rp4.500. Jika jarak yang ditempuh adalah x km, biaya yang harus dibayar penumpang adalah...", image: null, options: ["8000x + 4500", "4500x + 8000", "12500x", "(8000 + 4500)x"], answer: 1, difficulty: "HOTS" },
+            { id: 19, content: "Luas sebuah persegi panjang adalah (x² + 7x + 10) cm². Jika panjangnya (x + 5) cm, maka keliling persegi panjang tersebut adalah...", image: null, options: ["2x + 7", "4x + 14", "x + 2", "4x + 7"], answer: 1, difficulty: "HOTS" },
+            { id: 20, content: "Pak Budi membagikan sejumlah uang kepada 3 anaknya. Anak pertama mendapat 1/3 bagian, anak kedua mendapat 1/4 bagian, dan sisanya untuk anak ketiga. Jika total uang adalah y rupiah, bentuk aljabar uang anak ketiga adalah...", image: null, options: ["(5/12)y", "(7/12)y", "(1/12)y", "(3/4)y"], answer: 0, difficulty: "HOTS" }
+        ];
+
+        // --- STATE & VARIABLES ---
+        let currentQuestionIndex = 0;
+        let studentAnswers = new Array(20).fill(null);
+        let doubtfulStatus = new Array(20).fill(false);
+        let examTimeRemaining = 60 * 60; // 60 minutes
+        let timerInterval;
+        let examActive = false;
+        let studentData = { name: "", class: "", presensi: "" };
+
+        let violations = 0;
+        let cheatTimerInterval;
+        let cheatTimeLeft = 10;
+        let isCheatingOverlayActive = false;
+        let saveStateInterval;
+
+        // --- SECURITY ---
+        document.addEventListener('contextmenu', event => event.preventDefault()); 
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+            }
+        });
+
+        // --- ANTI-CHEATING LOGIC ---
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden && examActive) triggerAntiCheating();
+        });
+
+        window.addEventListener("blur", () => {
+            if (examActive && !isCheatingOverlayActive) triggerAntiCheating();
+        });
+
+        function triggerAntiCheating() {
+            if (!examActive) return;
+            isCheatingOverlayActive = true;
+            document.getElementById('antiCheatOverlay').classList.remove('hidden');
+            cheatTimeLeft = 10;
+            document.getElementById('cheatCountdownText').innerText = cheatTimeLeft;
+            document.getElementById('violationCount').innerText = violations + 1;
+
+            clearInterval(cheatTimerInterval);
+            cheatTimerInterval = setInterval(() => {
+                cheatTimeLeft--;
+                document.getElementById('cheatCountdownText').innerText = cheatTimeLeft;
+                if (cheatTimeLeft <= 0) {
+                    clearInterval(cheatTimerInterval);
+                    alert("Waktu peringatan habis! Ujian otomatis disubmit.");
+                    processSubmit();
+                }
+            }, 1000);
+        }
+
+        function returnToExam() {
+            clearInterval(cheatTimerInterval);
+            document.getElementById('antiCheatOverlay').classList.add('hidden');
+            isCheatingOverlayActive = false;
+            violations++;
+            if (violations >= 3) {
+                alert("PELANGGARAN MAKSIMAL! Anda telah melakukan kecurangan 3 kali. Ujian diakhiri otomatis.");
+                processSubmit();
+            }
+        }
+
+        // --- INITIALIZATION ---
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            studentData.name = document.getElementById('studentName').value;
+            studentData.class = document.getElementById('studentClass').value;
+            studentData.presensi = document.getElementById('studentPresensi').value; 
+            
+            document.getElementById('displayName').innerText = studentData.name;
+            document.getElementById('displayClass').innerText = studentData.class;
+            document.getElementById('displayPresensi').innerText = studentData.presensi;
+            
+            let savedState = localStorage.getItem('examState_aljabar');
+            if (savedState) {
+                let state = JSON.parse(savedState);
+                if(state.name === studentData.name) {
+                    studentAnswers = state.answers;
+                    doubtfulStatus = state.doubtful;
+                    examTimeRemaining = state.timeRemaining;
+                    violations = state.violations;
+                }
+            }
+            startExam();
+        });
+
+        function startExam() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('examScreen').classList.remove('hidden');
+            examActive = true;
+            generateNavButtons();
+            renderQuestion();
+            startTimer();
+            saveStateInterval = setInterval(saveState, 5000); 
+        }
+
+        // --- EXAM LOGIC ---
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                examTimeRemaining--;
+                let m = Math.floor(examTimeRemaining / 60).toString().padStart(2, '0');
+                let s = (examTimeRemaining % 60).toString().padStart(2, '0');
+                document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+                if (examTimeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Waktu Habis!");
+                    processSubmit();
+                }
+            }, 1000);
+        }
+
+        function generateNavButtons() {
+            const grid = document.getElementById('navGrid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 20; i++) {
+                let btn = document.createElement('button');
+                btn.className = 'nav-btn';
+                btn.innerText = i + 1;
+                btn.onclick = () => { currentQuestionIndex = i; renderQuestion(); };
+                btn.id = `navBtn-${i}`;
+                grid.appendChild(btn);
+            }
+            updateNavStatus();
+        }
+
+        function updateNavStatus() {
+            for (let i = 0; i < 20; i++) {
+                let btn = document.getElementById(`navBtn-${i}`);
+                btn.className = 'nav-btn';
+                if (i === currentQuestionIndex) btn.classList.add('active');
+                if (studentAnswers[i] !== null) btn.classList.add('answered');
+                if (doubtfulStatus[i]) btn.classList.add('doubtful'); 
+            }
+        }
+
+        function renderQuestion() {
+            const q = questionsData[currentQuestionIndex];
+            document.getElementById('questionNumber').innerText = `Soal ${currentQuestionIndex + 1}`;
+            
+            const diffBadge = document.getElementById('questionDifficulty');
+            diffBadge.innerText = q.difficulty;
+            diffBadge.className = `badge ${q.difficulty === 'HOTS' ? 'bg-hots' : 'bg-regular'}`;
+
+            document.getElementById('questionText').innerText = q.content;
+            
+            const imgContainer = document.getElementById('questionImageContainer');
+            if (q.image) {
+                document.getElementById('questionImage').src = q.image;
+                imgContainer.classList.remove('hidden');
+            } else {
+                imgContainer.classList.add('hidden');
+            }
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((optText, index) => {
+                let label = document.createElement('label');
+                label.className = `option-label ${studentAnswers[currentQuestionIndex] === index ? 'selected' : ''}`;
+                
+                let input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'option';
+                input.value = index;
+                input.checked = studentAnswers[currentQuestionIndex] === index;
+                input.onchange = () => selectOption(index);
+                
+                let span = document.createElement('span');
+                span.innerText = `${String.fromCharCode(65 + index)}. ${optText}`;
+                
+                label.appendChild(input);
+                label.appendChild(span);
+                optionsContainer.appendChild(label);
+            });
+
+            document.getElementById('btnPrev').disabled = currentQuestionIndex === 0;
+            document.getElementById('btnNext').innerText = currentQuestionIndex === 19 ? 'Selesai' : 'Selanjutnya \u2192';
+            
+            let btnDoubt = document.getElementById('btnDoubt');
+            if (doubtfulStatus[currentQuestionIndex]) {
+                btnDoubt.classList.replace('btn-warning', 'btn-outline');
+                btnDoubt.innerText = "Batal Ragu";
+            } else {
+                btnDoubt.classList.replace('btn-outline', 'btn-warning');
+                btnDoubt.innerText = "Ragu-ragu";
+            }
+            updateNavStatus();
+        }
+
+        function selectOption(index) {
+            studentAnswers[currentQuestionIndex] = index;
+            doubtfulStatus[currentQuestionIndex] = false; 
+            renderQuestion();
+            saveState();
+        }
+
+        function toggleDoubt() {
+            doubtfulStatus[currentQuestionIndex] = !doubtfulStatus[currentQuestionIndex];
+            renderQuestion();
+            saveState();
+        }
+
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) { currentQuestionIndex--; renderQuestion(); }
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < 19) { 
+                currentQuestionIndex++; renderQuestion(); 
+            } else {
+                confirmSubmit();
+            }
+        }
+
+        function saveState() {
+            const state = {
+                name: studentData.name,
+                class: studentData.class,
+                answers: studentAnswers,
+                doubtful: doubtfulStatus,
+                timeRemaining: examTimeRemaining,
+                violations: violations
+            };
+            localStorage.setItem('examState_aljabar', JSON.stringify(state));
+        }
+
+        function confirmSubmit() {
+            let unanswered = studentAnswers.filter(a => a === null).length;
+            let doubtfulCount = doubtfulStatus.filter(d => d === true).length;
+            
+            let msg = "Apakah Anda yakin ingin mengumpulkan jawaban?";
+            if (unanswered > 0) msg += `\nMasih ada ${unanswered} soal yang belum dijawab.`;
+            if (doubtfulCount > 0) msg += `\nMasih ada ${doubtfulCount} soal yang ditandai ragu-ragu.`;
+
+            if (confirm(msg)) processSubmit();
+        }
+
+        function processSubmit() {
+            examActive = false;
+            clearInterval(timerInterval);
+            clearInterval(cheatTimerInterval);
+            clearInterval(saveStateInterval);
+            document.getElementById('antiCheatOverlay').classList.add('hidden');
+            
+            let correct = 0;
+            for (let i = 0; i < 20; i++) {
+                if (studentAnswers[i] === questionsData[i].answer) correct++;
+            }
+            let score = (correct / 20) * 100;
+
+            localStorage.removeItem('examState_aljabar');
+
+            document.getElementById('examScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('hidden');
+            
+            document.getElementById('resName').innerText = studentData.name;
+            document.getElementById('resClass').innerText = studentData.class;
+            document.getElementById('resPresensi').innerText = studentData.presensi;
+            document.getElementById('resViolations').innerText = violations;
+            document.getElementById('resCorrect').innerText = correct;
+            document.getElementById('resScore').innerText = score;
+
+            let remedialBox = document.getElementById('resRemedial');
+            if(score < 70) {
+                remedialBox.innerHTML = "STATUS: TIDAK TUNTAS<br><span style='font-size:14px; font-weight:normal;'>Silakan hubungi guru mata pelajaran untuk melaksanakan Perbaikan/Remedial.</span>";
+                remedialBox.style.backgroundColor = "#ffe6e6"; 
+                remedialBox.style.color = "#dc3545"; 
+                remedialBox.style.border = "1px solid #dc3545";
+            } else {
+                remedialBox.innerHTML = "STATUS: TUNTAS<br><span style='font-size:14px; font-weight:normal;'>Selamat! Anda telah mencapai KKM pada materi ini.</span>";
+                remedialBox.style.backgroundColor = "#e6ffe6"; 
+                remedialBox.style.color = "#28a745"; 
+                remedialBox.style.border = "1px solid #28a745";
+            }
+        }
+
+        // --- FITUR DOWNLOAD KE GAMBAR (.PNG) ---
+        function downloadResultImage() {
+            const captureArea = document.getElementById('captureArea');
+            const btn = document.getElementById('btnDownloadImage');
+            
+            // Ubah state tombol agar pengguna tahu proses berjalan
+            let originalText = btn.innerText;
+            btn.innerText = "⏳ Sedang memproses gambar...";
+            btn.disabled = true;
+
+            // Render div captureArea ke dalam kanvas gambar
+            html2canvas(captureArea, { 
+                scale: 2, // scale diperbesar agar resolusi tidak pecah (HD)
+                backgroundColor: "#ffffff" // pastikan background tidak transparan/hitam
+            }).then(canvas => {
+                let link = document.createElement('a');
+                
+                // Format nama file: Hasil_Aljabar_Kelas_NamaSiswa.png
+                let namaSiswa = document.getElementById('resName').innerText.replace(/\s+/g, '_');
+                let kelasSiswa = document.getElementById('resClass').innerText.replace(/\s+/g, '');
+                
+                link.download = `Hasil_Aljabar_${kelasSiswa}_${namaSiswa}.png`;
+                link.href = canvas.toDataURL("image/png"); // Konversi canvas ke base64 png
+                link.click();
+                
+                // Kembalikan tombol ke keadaan semula
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }).catch(err => {
+                console.error("Error capturing image: ", err);
+                alert("Terjadi kesalahan saat memproses gambar. Silakan ambil tangkapan layar (screenshot) secara manual.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        // --- TEACHER MODE ---
+        function showTeacherLogin() {
+            let pwd = prompt("Masukkan Password Guru:");
+            if (pwd === "112233") {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('teacherScreen').classList.remove('hidden');
+                renderTeacherDashboard();
+            } else if (pwd !== null) {
+                alert("Password Salah!");
+            }
+        }
+
+        function logoutTeacher() {
+            document.getElementById('teacherScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+
+        function renderTeacherDashboard() {
+            let tc = document.getElementById('teacherContent');
+            let html = `<h3>Kunci Jawaban & Edit Soal</h3><br>`;
+            questionsData.forEach((q, i) => {
+                html += `
+                <div style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
+                    <p><strong>Soal ${i+1} (${q.difficulty})</strong>: ${q.content}</p>
+                    <p><strong>Kunci:</strong> ${String.fromCharCode(65 + q.answer)}. ${q.options[q.answer]}</p>
+                </div>
+                `;
+            });
+            tc.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
